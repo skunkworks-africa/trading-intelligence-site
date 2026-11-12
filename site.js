@@ -1,24 +1,39 @@
 'use strict';
-const stages = [
-  { label: 'START WITH THE SOURCE', title: 'A history you can trace.', copy: 'Collect completed candles with a read-only MT5 script. Record the provider, instrument, timeframe and verified broker timezone alongside the original export.', items: ['Completed candles only', 'Explicit timezone and daylight-saving review', 'Original file preserved with a SHA-256 checksum'] },
-  { label: 'MAKE THE EVIDENCE REVIEWABLE', title: 'Confidence begins with checks.', copy: 'Inspect timestamps, OHLC price relationships and gaps. Review source rights and dataset provenance before approving real market history for research.', items: ['Consistent prices and increasing timestamps', 'Gaps identified for explicit review', 'Source rights and independent dataset approval'] },
-  { label: 'TURN ASSUMPTIONS INTO QUESTIONS', title: 'Test an idea, then challenge it.', copy: 'Use approved data to explore strategy signals and offline simulations. Make costs and risk assumptions explicit, and treat every result as evidence to question.', items: ['Offline, bar-based strategy simulation', 'Explicit trading-cost and risk assumptions', 'Out-of-sample evaluation planned; execution disabled'] }
-];
-document.querySelectorAll('[data-step]').forEach(button => {
-  button.addEventListener('click', () => {
-    const stage = stages[Number(button.dataset.step)];
-    document.querySelectorAll('[data-step]').forEach(item => {
-      const selected = item === button;
-      item.classList.toggle('active', selected);
-      item.setAttribute('aria-pressed', String(selected));
-    });
-    document.getElementById('workflow-label').textContent = stage.label;
-    document.getElementById('workflow-title').textContent = stage.title;
-    document.getElementById('workflow-copy').textContent = stage.copy;
-    document.getElementById('workflow-list').replaceChildren(...stage.items.map(text => {
-      const li = document.createElement('li');
-      li.textContent = text;
-      return li;
-    }));
-  });
+const theme = document.getElementById('theme');
+theme.value = document.documentElement.dataset.theme || 'system';
+theme.addEventListener('change', () => {
+  if (theme.value === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme.value;
+  try {
+    if (theme.value === 'system') localStorage.removeItem('skw-trading-theme');
+    else localStorage.setItem('skw-trading-theme', theme.value);
+  } catch { /* The selected theme still works when storage is unavailable. */ }
+});
+const menuButton = document.querySelector('.menu-button');
+const menu = document.getElementById('mobile-navigation');
+menuButton.hidden = false;
+function closeMenu(returnFocus = false) {
+  menu.hidden = true;
+  menuButton.setAttribute('aria-expanded', 'false');
+  menuButton.setAttribute('aria-label', 'Open navigation');
+  if (returnFocus) menuButton.focus();
+}
+menuButton.addEventListener('click', () => {
+  const open = menuButton.getAttribute('aria-expanded') !== 'true';
+  menu.hidden = !open;
+  menuButton.setAttribute('aria-expanded', String(open));
+  menuButton.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !menu.hidden) closeMenu(true);
+});
+menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+  closeMenu();
+  if (link.hash && link.origin === location.origin) {
+    const target = document.querySelector(link.hash);
+    if (target) { target.setAttribute('tabindex', '-1'); target.focus({preventScroll:true}); }
+  }
+}));
+matchMedia('(min-width:1101px)').addEventListener('change', event => {
+  if (event.matches) closeMenu();
 });
